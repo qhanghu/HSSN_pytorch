@@ -322,6 +322,28 @@ class EncoderDecoder(BaseSegmentor):
                 cur_seg_logit = self.inference(imgs[i], img_metas[i], rescale)
                 seg_logit += cur_seg_logit
             seg_logit /= len(imgs)
+            if self.test_cfg['is_hiera']:
+                if seg_logit.size(1)==26:
+                    seg_logit[:,0:2]+=seg_logit[:,-7]
+                    seg_logit[:,2:5]+=seg_logit[:,-6]
+                    seg_logit[:,5:8]+=seg_logit[:,-5]
+                    seg_logit[:,8:10]+=seg_logit[:,-4]
+                    seg_logit[:,10:11]+=seg_logit[:,-3]
+                    seg_logit[:,11:13]+=seg_logit[:,-2]
+                    seg_logit[:,13:19]+=seg_logit[:,-1]
+                elif seg_logit.size(1)==12:
+                    seg_logit[:,0:1]=seg_logit[:,0:1]+seg_logit[:,7]+seg_logit[:,10]
+                    seg_logit[:,1:5]=seg_logit[:,1:5]+seg_logit[:,8]+seg_logit[:,11]
+                    seg_logit[:,5:7]=seg_logit[:,5:7]+seg_logit[:,9]+seg_logit[:,11]
+                elif seg_logit.size(1)==25:
+                    seg_logit[:,0:1]=seg_logit[:,0:1]+seg_logit[:,20]+seg_logit[:,23]
+                    seg_logit[:,1:8]=seg_logit[:,1:8]+seg_logit[:,21]+seg_logit[:,24]
+                    seg_logit[:,10:12]=seg_logit[:,10:12]+seg_logit[:,21]+seg_logit[:,24]
+                    seg_logit[:,13:16]=seg_logit[:,13:16]+seg_logit[:,21]+seg_logit[:,24]
+                    seg_logit[:,8:10]=seg_logit[:,8:10]+seg_logit[:,22]+seg_logit[:,24]
+                    seg_logit[:,12:13]=seg_logit[:,12:13]+seg_logit[:,22]+seg_logit[:,24]
+                    seg_logit[:,16:20]=seg_logit[:,16:20]+seg_logit[:,22]+seg_logit[:,24]
+                seg_logit = seg_logit[:,:-self.test_cfg['hiera_num_classes']]  
             seg_pred = seg_logit.argmax(dim=1)
             seg_pred = seg_pred.cpu().numpy()
             # unravel batch dim
